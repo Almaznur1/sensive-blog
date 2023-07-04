@@ -32,6 +32,11 @@ class PostQuerySet(models.QuerySet):
         tags = Prefetch('tags', queryset=Tag.objects.annotate(Count('posts')))
         return self.prefetch_related(tags)
 
+    def most_fresh(self):
+        most_fresh_posts = (Post.objects.annotate(Count('comments')).
+                            order_by('-published_at'))
+        return most_fresh_posts
+
 
 class TagQuerySet(models.QuerySet):
     def popular(self):
