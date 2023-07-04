@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count
-from blog.models import Comment, Post, Tag
+from blog.models import Post, Tag
 
 
 def serialize_post(post):
@@ -50,7 +50,7 @@ def index(request):
 def post_detail(request, slug):
     posts_with_tags = Post.objects.fetch_with_tags()
     post = get_object_or_404(posts_with_tags, slug=slug)
-    comments = Comment.objects.filter(post=post).prefetch_related('author')
+    comments = post.comments.select_related('author')
     serialized_comments = []
     for comment in comments:
         serialized_comments.append({
@@ -59,8 +59,6 @@ def post_detail(request, slug):
             'author': comment.author.username,
         })
 
-    likes = post.likes.all()
-
     related_tags = post.tags.all()
 
     serialized_post = {
@@ -68,7 +66,7 @@ def post_detail(request, slug):
         'text': post.text,
         'author': post.author.username,
         'comments': serialized_comments,
-        'likes_amount': likes.count,
+        'likes_amount': post.likes.count,
         'image_url': post.image.url if post.image else None,
         'published_at': post.published_at,
         'slug': post.slug,
@@ -77,7 +75,10 @@ def post_detail(request, slug):
 
     most_popular_tags = Tag.objects.popular()[:5]
 
-    most_popular_posts = []  # TODO. Как это посчитать?
+    most_popular_posts = Post.objects.popular() \
+                                     .prefetch_related('author') \
+                                     .fetch_with_tags() \
+                                     .fetch_with_comment_count()[:5]
 
     context = {
         'post': serialized_post,
@@ -94,7 +95,10 @@ def tag_filter(request, tag_title):
 
     most_popular_tags = Tag.objects.popular()[:5]
 
-    most_popular_posts = []  # TODO. Как это посчитать?
+    most_popular_posts = Post.objects.popular() \
+                                     .prefetch_related('author') \
+                                     .fetch_with_tags() \
+                                     .fetch_with_comment_count()[:5]
 
     related_posts = tag.posts.annotate(Count('comments')) \
                              .fetch_with_tags() \
