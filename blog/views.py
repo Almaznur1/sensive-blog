@@ -33,7 +33,8 @@ def index(request):
 
     most_fresh_posts = Post.objects.most_fresh() \
                                    .prefetch_related('author') \
-                                   .fetch_with_tags()[:5]
+                                   .fetch_with_tags() \
+                                   .fetch_with_comment_count()[:5]
 
     most_popular_tags = Tag.objects.popular()[:5]
 
@@ -101,8 +102,9 @@ def tag_filter(request, tag_title):
                                      .fetch_with_comment_count()[:5]
 
     related_posts = tag.posts.most_fresh() \
+                             .prefetch_related('author') \
                              .fetch_with_tags() \
-                             .prefetch_related('author')[:20]
+                             .fetch_with_comment_count()[:20]
 
     context = {
         'tag': tag.title,

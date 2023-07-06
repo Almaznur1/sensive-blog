@@ -33,8 +33,7 @@ class PostQuerySet(models.QuerySet):
         return self.prefetch_related(tags)
 
     def most_fresh(self):
-        most_fresh_posts = (Post.objects.annotate(Count('comments')).
-                            order_by('-published_at'))
+        most_fresh_posts = Post.objects.order_by('-published_at')
         return most_fresh_posts
 
 
