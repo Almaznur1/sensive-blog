@@ -48,8 +48,8 @@ def index(request):
 
 
 def post_detail(request, slug):
-    posts_with_tags = Post.objects.fetch_with_tags().annotate(Count('likes'))
-    post = get_object_or_404(posts_with_tags, slug=slug)
+    posts_with_tags_and_likes = Post.objects.fetch_with_tags().popular()
+    post = get_object_or_404(posts_with_tags_and_likes, slug=slug)
     comments = post.comments.select_related('author')
     serialized_comments = []
     for comment in comments:
@@ -100,7 +100,7 @@ def tag_filter(request, tag_title):
                                      .fetch_with_tags() \
                                      .fetch_with_comment_count()[:5]
 
-    related_posts = tag.posts.annotate(Count('comments')) \
+    related_posts = tag.posts.most_fresh() \
                              .fetch_with_tags() \
                              .prefetch_related('author')[:20]
 
